@@ -120,16 +120,24 @@ table.data-table, table.schedule-table { width: 100%; border-collapse: collapse;
         <div class="form-grid">
           <div class="form-group"><label>Oppilas</label><select id="note-student" multiple size="20"></select></div>
           <div class="form-group"><label>Merkintä</label><select id="note-type"></select></div>
-          <div class="form-group">
+<div class="form-group">
   <label>Klo</label>
-  <select id="note-time-select" multiple size="6">
+  <select id="note-time-select" multiple size="7" onchange="toggleCustomTime()">
     <option value="08:35">08:35–09:20</option>
     <option value="09:25">09:25–10:10</option>
     <option value="10:20">10:20–11:05</option>
     <option value="11:35">11:35–12:20</option>
     <option value="12:50">12:50–13:35</option>
     <option value="13:40">13:40–14:25</option>
+    <option value="custom">Muu aika...</option>
   </select>
+
+  <div id="custom-time-container" style="display:none; margin-top:8px;">
+    <input type="time" id="custom-start">
+    -
+    <input type="time" id="custom-end">
+  </div>
+
   <button type="button" onclick="selectFullDay()" class="btn btn-edit" style="margin-top:5px;">
     Valitse koko päivä
   </button>
@@ -258,7 +266,19 @@ function saveNote(){
   const editIdx=document.getElementById('edit-idx').value;
 
   const selectedStudents = [...document.getElementById('note-student').selectedOptions].map(o => o.value);
-  const selectedTimes = [...document.getElementById('note-time-select').selectedOptions].map(o => o.value);
+  let selectedTimes = [...document.getElementById('note-time-select').selectedOptions].map(o => o.value);
+
+if(selectedTimes.includes("custom")){
+  const start = document.getElementById("custom-start").value;
+  const end = document.getElementById("custom-end").value;
+
+  if(start && end){
+    selectedTimes = [`${start}-${end}`];
+  } else {
+    alert("Anna custom-ajalle alku- ja loppuaika");
+    return;
+  }
+}
 
   const baseNote = {
     type: document.getElementById('note-type').value,
@@ -378,6 +398,14 @@ document.addEventListener('DOMContentLoaded', function() {
 function selectFullDay(){
   const select = document.getElementById("note-time-select");
   [...select.options].forEach(o => o.selected = true);
+}
+function toggleCustomTime(){
+  const select = document.getElementById("note-time-select");
+  const customContainer = document.getElementById("custom-time-container");
+
+  const isCustomSelected = [...select.selectedOptions].some(o => o.value === "custom");
+
+  customContainer.style.display = isCustomSelected ? "block" : "none";
 }
 </script>
 </body>

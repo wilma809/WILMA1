@@ -120,7 +120,20 @@ table.data-table, table.schedule-table { width: 100%; border-collapse: collapse;
         <div class="form-grid">
           <div class="form-group"><label>Oppilas</label><select id="note-student" multiple size="20"></select></div>
           <div class="form-group"><label>Merkintä</label><select id="note-type"></select></div>
-          <div class="form-group"><label>Klo</label><input type="text" id="note-time" value="08:35"></div>
+          <div class="form-group">
+  <label>Klo</label>
+  <select id="note-time-select" multiple size="6">
+    <option value="08:35">08:35–09:20</option>
+    <option value="09:25">09:25–10:10</option>
+    <option value="10:20">10:20–11:05</option>
+    <option value="11:35">11:35–12:20</option>
+    <option value="12:50">12:50–13:35</option>
+    <option value="13:40">13:40–14:25</option>
+  </select>
+  <button type="button" onclick="selectFullDay()" class="btn btn-edit" style="margin-top:5px;">
+    Valitse koko päivä
+  </button>
+</div>
           <div class="form-group"><label>Kesto (min)</label><input type="number" id="note-duration" value="45"></div>
           <div class="form-group"><label>Lisätietoja</label><input type="text" id="note-info" placeholder="Valinnainen"></div>
           <div class="form-group"><label>Ope</label><input type="text" id="note-author" readonly></div>
@@ -245,9 +258,9 @@ function saveNote(){
   const editIdx=document.getElementById('edit-idx').value;
 
   const selectedStudents = [...document.getElementById('note-student').selectedOptions].map(o => o.value);
+  const selectedTimes = [...document.getElementById('note-time-select').selectedOptions].map(o => o.value);
 
   const baseNote = {
-    time: document.getElementById('note-time').value,
     type: document.getElementById('note-type').value,
     duration: document.getElementById('note-duration').value,
     info: document.getElementById('note-info').value,
@@ -257,14 +270,18 @@ function saveNote(){
   if(editIdx !== ""){
     notes[editIdx] = {
       ...baseNote,
+      time: selectedTimes[0] || "",
       student: selectedStudents[0] || ""
     };
     document.getElementById('edit-idx').value = "";
   } else {
     selectedStudents.forEach(student => {
-      notes.push({
-        ...baseNote,
-        student: student
+      selectedTimes.forEach(time => {
+        notes.push({
+          ...baseNote,
+          time: time,
+          student: student
+        });
       });
     });
   }
@@ -279,7 +296,35 @@ function renderNotes(){
 <td><button class="btn btn-edit" onclick="editNote(${i})">Muokkaa</button><button class="btn btn-del" onclick="deleteNote(${i})">Poista</button></td>
 </tr>`}).join('');
 }
-function editNote(i){const n=notes[i];document.getElementById('note-time').value=n.time;document.getElementById('note-student').value=n.student;document.getElementById('note-type').value=n.type;document.getElementById('note-duration').value=n.duration;document.getElementById('note-info').value=n.info;document.getElementById('note-author').value=n.author;document.getElementById('edit-idx').value=i;document.getElementById('note-title').innerText="Muokkaa merkintää";document.getElementById('save-btn').innerText="Tallenna muutokset";}
+function editNote(i){
+  const n = notes[i];
+
+  // Tyhjennä kaikki tuntivalinnat ensin
+  const timeSelect = document.getElementById('note-time-select');
+  [...timeSelect.options].forEach(o => o.selected = false);
+
+  // Valitse oikea tunti
+  [...timeSelect.options].forEach(o => {
+    if(o.value === n.time){
+      o.selected = true;
+    }
+  });
+
+  // Valitse oppilas
+  const studentSelect = document.getElementById('note-student');
+  [...studentSelect.options].forEach(o => {
+    o.selected = (o.value === n.student);
+  });
+
+  document.getElementById('note-type').value = n.type;
+  document.getElementById('note-duration').value = n.duration;
+  document.getElementById('note-info').value = n.info;
+  document.getElementById('note-author').value = n.author;
+  document.getElementById('edit-idx').value = i;
+
+  document.getElementById('note-title').innerText = "Muokkaa merkintää";
+  document.getElementById('save-btn').innerText = "Tallenna muutokset";
+}
 function deleteNote(i){notes.splice(i,1);renderNotes();}
 function resetForm(){document.getElementById('note-info').value="";document.getElementById('note-title').innerText="Lisää tuntimerkintä";document.getElementById('save-btn').innerText="Tallenna merkintä";}
 
@@ -330,7 +375,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
-    
+function selectFullDay(){
+  const select = document.getElementById("note-time-select");
+  [...select.options].forEach(o => o.selected = true);
+}
 </script>
 </body>
 </html>

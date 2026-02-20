@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wilma – Merenoja 2026</title>
+<style>
+:root{
+  --blue:#003366; --light:#eef2f6; --border:#cfd8e3; --accent:#2ecc71; --orange:#f39c12; --danger:#e74c3c;
+  --color-positiivinen:#0080ff; --color-myohastynyt:#ffff00; --color-selvittamaton:#ff0000;
+  --color-kotitehtavat:#0070c0; --color-sairas:#00b0f0; --color-lupa:#00b0f0;
+  --color-luvaton_selvitetty:#ff0000; --color-asiaton_kaytos:#ffc000; --color-muu_koulutyo:#ff00ff;
+  --color-aktiivinen:#002060; --color-hyva_paiva:#00b0f0; --color-hienosti_toisten:#92d050;
+  --color-valineita_puuttuu:#92d050; --color-luokasta_poistaminen:#c55a11;
+  --color-ohjaava_keskustelu:#ffc000; --color-oppitunnin_hairinta:#a6a6a6; --color-jarjestyssaannon_rikkomus:#4472c4; --color-muu_merkinta:#36454F;
+}
+body{margin:0;font-family:Arial,sans-serif;background:#f2f4f7;}
+#login-overlay{position:fixed;inset:0;background:var(--blue);display:flex;align-items:center;justify-content:center;z-index:2000;}
+.login-box{background:#fff;padding:40px;width:400px;border-radius:6px;box-shadow:0 4px 15px rgba(0,0,0,0.3);}
+header{background:var(--blue);color:#fff;padding:15px 20px;display:flex;justify-content:space-between;align-items:center;position:relative;}
+#user-display{cursor:pointer;position:relative;}
+#user-popup{display:none;position:absolute;top:50px;right:0;background:#fff;color:#000;border:1px solid var(--border);padding:10px;border-radius:4px;width:200px;box-shadow:0 2px 8px rgba(0,0,0,0.2);}
+#wrapper{display:flex; min-height:100vh;}
+aside{width:220px;background:#fff;border-right:1px solid var(--border);flex-shrink:0;}
+aside a{display:block;padding:12px 16px;color:var(--blue);text-decoration:none;cursor:pointer;border-bottom:1px solid #f9f9f9;}
+aside a.active, aside a:hover{background:var(--light);font-weight:bold}
+main{flex:1;padding:20px;overflow-x:hidden;}
+.page{display:none;} .page.active{display:block;}
+.card{background:#fff;border:1px solid var(--border);padding:20px;margin-bottom:16px;border-radius:4px;box-shadow:0 2px 5px rgba(0,0,0,0.05);}
+.form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; margin-bottom: 20px; }
+.form-group label { display: block; font-weight: bold; margin-bottom: 5px; font-size: 13px; }
+.form-group select, .form-group input { width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 4px; box-sizing: border-box; }
+table.data-table, table.schedule-table { width: 100%; border-collapse: collapse; background: white; }
+.data-table th, .data-table td, .schedule-table th, .schedule-table td { border:1px solid var(--border); padding:10px; text-align:center; }
+.btn { padding:10px 15px; border:none; border-radius:4px; cursor:pointer; font-weight:bold; }
+.btn-save{background:var(--accent); color:white;}
+.btn-edit{background:var(--orange); color:white; padding:4px 8px; font-size:11px; margin-right:5px;}
+.btn-del{background:var(--danger); color:white; padding:4px 8px; font-size:11px;}
+#seating-area { width:100%; height:500px; background:#fdfdfd; position:relative; border:2px dashed var(--border); margin-top:15px; }
+.desk { width:110px; height:70px; background:#fff; border:2px solid var(--blue); position:absolute; cursor:grab; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:bold; text-align:center; border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.1); padding:5px; }
+.schedule-table th:first-child, .schedule-table td:first-child { width:80px; font-weight:bold; }
+.schedule-table th:first-child, .schedule-table td:first-child { 
+  width:80px; 
+  font-weight:bold; 
+}
+
+/* ---- TUNTIMERKINTÖJEN VÄRIT ---- */
+
+.bg-positiivinen { background-color: var(--color-positiivinen); color:white; }
+.bg-myohastynyt { background-color: var(--color-myohastynyt); }
+.bg-selvittamaton { background-color: var(--color-selvittamaton); color:white; }
+.bg-kotitehtavat { background-color: var(--color-kotitehtavat); color:white; }
+.bg-sairas { background-color: var(--color-sairas); }
+.bg-lupa { background-color: var(--color-lupa); }
+.bg-luvaton_selvitetty { background-color: var(--color-luvaton_selvitetty); color:white; }
+.bg-asiaton_kaytos { background-color: var(--color-asiaton_kaytos); }
+.bg-muu_koulutyo { background-color: var(--color-muu_koulutyo); }
+.bg-aktiivinen { background-color: var(--color-aktiivinen); color:white; }
+.bg-hyva_paiva { background-color: var(--color-hyva_paiva); }
+.bg-hienosti_toisten { background-color: var(--color-hienosti_toisten); }
+.bg-valineita_puuttuu { background-color: var(--color-valineita_puuttuu); }
+.bg-luokasta_poistaminen { background-color: var(--color-luokasta_poistaminen); color:white; }
+.bg-ohjaava_keskustelu { background-color: var(--color-ohjaava_keskustelu); }
+.bg-oppitunnin_hairinta { background-color: var(--color-oppitunnin_hairinta); }
+.bg-jarjestyssaannon_rikkomus { background-color: var(--color-jarjestyssaannon_rikkomus); color:white; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-overlay">
+  <div class="login-box">
+    <h1 style="text-align:center; color:var(--blue);">Wilma</h1>
+    <p style="text-align:center; color:#666;">Merenojan yhtenäiskoulu - Kirjaudu</p>
+    <input id="username" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid var(--border);" placeholder="etunimi.sukunimi@edu.kalajoki.fi">
+    <input id="password" type="password" style="width:100%; padding:12px; margin-bottom:15px; border:1px solid var(--border);" placeholder="Salasana">
+    <button onclick="login()" style="width:100%; padding:12px; background:var(--blue); color:white; border:none; border-radius:4px; font-weight:bold;">KIRJAUDU</button>
+  </div>
+</div>
+
+<!-- HEADER -->
+<header id="topbar" style="display:none">
+  <div><strong>Wilma Merenoja</strong></div>
+  <div id="user-display" onclick="toggleUserPopup()"></div>
+  <div id="user-popup">
+    <p><strong>Sähköposti:</strong> <span id="user-email"></span></p>
+    <p><strong>Rooli:</strong> <span id="user-role"></span></p>
+  </div>
+</header>
+
+<div id="wrapper" style="display:none">
+  <aside>
+    <a onclick="showPage('home')" id="nav-home" class="active">Etusivu</a>
+    <a onclick="showPage('messages')" id="nav-messages">Viestit</a>
+    <a onclick="showPage('notes')" id="nav-notes">Tuntimerkinnät</a>
+    <a onclick="showPage('schedule')" id="nav-schedule">Työjärjestys</a>
+    <a onclick="showPage('seating')" id="nav-seating">Istumajärjestys</a>
+    <a onclick="logout()" style="color:var(--danger); border-top:1px solid #eee; margin-top:20px;">Kirjaudu ulos</a>
+  </aside>
+
+  <main>
+    <div id="home" class="page active">
+        <div class="card"><h2>Tervetuloa</h2><p>Tänään on perjantai 20.2.2026.</p></div>
+    </div>
+
+    <div id="messages" class="page">
+        <div class="card">
+          <h2>Uusi viesti</h2>
+          <input type="text" placeholder="Vastaanottaja" style="width:100%; padding:8px; margin-bottom:10px;"><br>
+          <textarea style="width:100%; height:100px; padding:10px; border:1px solid var(--border);" placeholder="Viesti..."></textarea><br><br>
+          <button class="btn btn-save" onclick="alert('Viesti lähetetty!')">Lähetä</button>
+        </div>
+    </div>
+
+    <!-- TUNTIMERKINNÄT -->
+    <div id="notes" class="page">
+      <div class="card">
+        <h2 id="note-title">Lisää tuntimerkintä</h2>
+        <input type="hidden" id="edit-idx" value="">
+        <div class="form-grid">
+          <div class="form-group"><label>Oppilas</label><select id="note-student" multiple size="20"></select></div>
+          <div class="form-group"><label>Merkintä</label><select id="note-type"></select></div>
+          <div class="form-group"><label>Klo</label><input type="text" id="note-time" value="08:35"></div>
+          <div class="form-group"><label>Kesto (min)</label><input type="number" id="note-duration" value="45"></div>
+          <div class="form-group"><label>Lisätietoja</label><input type="text" id="note-info" placeholder="Valinnainen"></div>
+          <div class="form-group"><label>Ope</label><input type="text" id="note-author" readonly></div>
+        </div>
+        <button class="btn btn-save" id="save-btn" onclick="saveNote()">Tallenna merkintä</button>
+      </div>
+      <div class="card">
+        <h3>Päivän merkinnät</h3>
+        <table class="data-table">
+          <thead><tr><th>Klo</th><th>Oppilas</th><th>Merkintä</th><th>Lisätietoja</th><th>Ope</th><th>Toiminnot</th></tr></thead>
+          <tbody id="notes-list"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- TYÖJÄRJESTYS -->
+    <div id="schedule" class="page">
+        <div class="card">
+          <h2>Työjärjestys</h2>
+          <table class="schedule-table">
+            <thead>
+              <tr><th>Aika</th><th>Ma</th><th>Ti</th><th>Ke</th><th>To</th><th>Pe</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>08:35-09:20</td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>09:25-10:10</td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>10:20-11:05</td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>11:35-12:20</td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>12:50-13:35</td><td></td><td></td><td></td><td></td><td></td></tr>
+              <tr><td>13:40-14:25</td><td></td><td></td><td></td><td></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+    </div>
+
+    <!-- ISTUMAJÄRJESTYS -->
+    <div id="seating" class="page">
+    <div class="card">
+      <h2>Istumajärjestys</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Luokkahuone:</label>
+          <select id="seating-class" onchange="loadDesks()">
+            <option value="Flada_KO1">Flada_KO1</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Ryhmä:</label>
+          <select id="seating-group" onchange="loadDesks()">
+            <option value="makumatka_8lk (vMKOMAM03.2)">makumatka_8lk (vMKOMAM03.2)</option>
+            <option value="kotitalous_7lk (KO.7.8)">kotitalous_7lk (KO.7.8)</option>
+            <option value="hygieniaosaamisen_perusteet_8lk (vHYG.1)">hygieniaosaamisen_perusteet_8lk (vHYG.1)</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Valitse oppilas:</label>
+          <select id="seating-student"></select>
+          <button class="btn btn-save" onclick="addDesk()">Lisää pulpetti</button>
+        </div>
+      </div>
+      <div id="seating-area"></div>
+    </div>
+</div>
+
+  </main>
+</div>
+
+<script>
+const students = ["7A Firanta Adrian","7A Heikkilä Aida","7A Honkimaa Aino","7A Isopahkala Martha","7A Jutila Roope","7A Lastikka Elijah","7A Mehtälä Saara","7A Moilanen Joonas","7A Myllymäki Topias","7A Palin Miisa","7A Petäistö Topias","7A Prittinen Aino","7A Rantonen Saana","7A Rud Tymofii","7A Salmela Jone","7A Sorvala Frans","7A Takalo Jimi","7A Typpö Josefiina","7A Kultamäki Miro","7B Aitta Laura","7B Anttiroiko Matias","7B Isopahkala Nooa","7B Junnikkala Akseli","7B Kattilakoski Luukas","7B Korpi Venla","7B Lehtikangas Lotta","7B Manninen Minttu","7B Mäkelä Emma","7B Nikula Floranna","7B Niskakangas Aida","7B Oikarainen Nelly","7B Oja Saku","7B Okkonen Martta","7B Pajula Niklas","7B Poranen Elli","7B Rantala Milja","7B Rautakoski Adeliina","7B Sinkkonen Lumi","7B Vihelä Wilhelmi","7B Vilu Elias","7B Väre Vilmer","5V Hordieieva Milana","9V Hordieiev Tymur","9V Hrabko Vadym","9V Pelykh Ratibor","7C Ainasoja Lauri-Tapio","7C Ferreira Iines","7C Hilli Roope","7C Hintsala Onni","7C Kauppila Jasper","7C Kähtävä Atte","7C Lindholm Daniel","7C Lönnbäck Atte","7C Niemelä Mila","7C Nuorala Jaakko","7C Ojala Sampo","7C Pahikainen Roope","7C Rautakoski Aino","7C Röyttä Sara","7C Saari Matias","7C Savolainen Hilma","7C Tavasti Jimi","7C Östberg Veera","7C Godard Tobias","7D Alasuutari Verneri","7D Annala Elina","7D Humalajoki Joel","7D Kutasi Aron","7D Mölsä Moona","7D Nauha Valtteri","7D Niemi-Korpi Inka","7D Peltokangas Neea","7D Pirkola Oskari","7D Polet Peetu","7D Puutio Otto","7D Roukala Adele","7D Räihälä Samu","7D Saarela Jesse","7D Saukko Eemeli","7D Sorvari Lilli","7D Takalo Emil","7D Tuura Akseli","7D Vihelä Karoliina","7D Somero Hugo","7D Tolonen Aapo","7E Alsheikh Ahmad","7E Anttiroiko Nilla","7E Hemminki Elina","7E Jylhä Jussi","7E Karppinen Elli","7E Kontio Roope","7E Koutonen Lotta","7E Lastikka Aino","7E Liimatainen Juho","7E Manninen Joel","7E Niemi Veikka","7E Nikula Aino","7E Nikula Eevert","7E Pahikainen Venla","7E Rautakoski Benjamin","7E Simi Joel","7E Suonvieri Mona","7E Säteri Mette","7E Tuomivaara Stella","7E Väisänen Kaapo","7F Heikkilä Onni","7F Helanen Elli","7F Kemell Severi","7F Keskisipilä Aarne","7F Luoto Salla","7F Maleki Mehdi","7F Mikkelä Vilma","7F Mustola Peetu","7F Okkonen Julianna","7F Okkonen Matleena","7F Rahkola Maria","7F Rautakoski Lari","7F Siermala Veera","7F Sorvari Antton","7F Sorvari Paulus","7F Tuomela Emilia","7F Vähäjylkkä Leevi","7F Yliverronen Elias","8A Eskola Matilda","8A Hietala Aava","8A Hilli Laura","8A Karjalainen Ira","8A Kerola Juulia","8A Ljaskov Sandra","8A Mård Anniina","8A Mäkitalo Aila","8A Nevalainen Kerttu","8A Nivala Eemil","8A Oja Veikka","8A Ojala Aamos","8A Parhiala Johan","8A Priuska Peetu","8A Rajaniemi Alina","8A Sadinsalo Niina","8A Saukko Oona","8A Tavasti Joonas","8A Vähäkangas Ella","8A Ålander Wilma","8B Aittamaa Leo","8B Alasuvanto Juho","8B Himanka Nevina","8B Joki-Erkkilä Fiia","8B Kannus Santeri","8B Ketola Roni","8B Käpylä Emma","8B Manner Carmen","8B Myllylä Miro","8B Männistö Elmeri","8B Pahkala Jimi","8B Peltola Aino","8B Polet Pinja","8B Rautakoski Impi","8B Roukala Jere","8B Salmela Pepita","8B Siermala Saana","8B Simi Patrik","8B Sorvari Joose","8B Ylitalo Veeti","8C Alajoki Miisa","8C Anttiroiko Nelli","8C Baas Jasmin","8C Huhtala Jerina","8C Isopahkala Lumia","8C Juhonsalo Oliver","8C Kangas Tuomas","8C Karjalainen Petra","8C Kortesluoma Tuulia","8C Liimatainen Rami","8C Lönnback Milla","8C Mäkelä Jessika","8C Paavola Miro","8C Peltola Ilari","8C Pulli Henna","8C Siipo Severi","8C Somero Frans","8C Sorvari Silvia","8C Tölli Peetu","8C Verronen Albin","8D Hihnala Valtteri","8D Isopahkala Eerik","8D Karekivi Sofia","8D Kiiveri Kimi","8D Kiss Emese","8D Korva Elias","8D Koutonen Peppi","8D Leppilampi Petra","8D Malinen Pipsa","8D Mykkänen Aada","8D Mäyrä Inka","8D Niemelä Urho","8D Nivala Tolja","8D Okkonen Iida","8D Prittinen Netta","8D Rajala Ville","8D Salminen Eedit","8D Torvikoski Veera","8D Yli-Torvi Jose","8D Änkilä Sofia","8E Alasuvanto Saku","8E Isokääntä Nuutti","8E Juola Aada","8E Kamunen Elli","8E Kivi Emilia","8E Latva-Rasula Elias","8E Lukkarila Miko","8E Muhonen Heta","8E Myllymäki Eedit","8E Männistö Noel","8E Määttänen Nea","8E Nietula Eemeli","8E Nissinen Lauri","8E Nuorala Emil","8E Prittinen Pyry","8E Rautakoski Iida","8E Rautakoski Minea","8E Roukala Venla","8E Siironen Onni","8E Veikkolainen Iivar","8E Vihelä Vilpas","8F Ainali Netta","8F Jokitalo Sara","8F Kontio Evelina","8F Kontio Onni","8F Kupari Juulia","8F Lankila Eva","8F Lehtola Lauri","8F Nevalainen Touko","8F Nikki Pyry","8F Nikkola Kiira","8F Nikunen Ella","8F Nuorala Roope","8F Pahajoki Kristian","8F Pentti Perttu","8F Piukkala Wäinö","8F Rahja Oliver","8F Suomala Petrus","8F Tuura Netta-Liina","8F Törnvall Taru","8F Vihelä Topias","8F Ylitalo Taika","8F Alatalo Tuukka","7-9H Alasuvanto Manu","7-9H Kutasi Oliver","7-9H Halme Justus","7-9H Tuura Timi","7-9H Hintsala Aadam","7-9H Kauppila Alwari","7-9H Tervahartiala Leo","7-9H Typpö Elias","7-9H Tervahartiala Toni","7-9I Keskitalo Niklas","7-9I Korva Elias","7-9I Nevanperä Aale","7-9I Kois Aate","7-9I Kuparinen Emilia","7-9I Pentti Peetu","7-9I Verronen Lenni","7-9I Latva-Rasula Iisak","7-9I Siermala Eerika","7-9I Shapovalova Sofia","9A Hirvi Eetu","9A Joki-Erkkilä Siiri","9A Ketola Jimi","9A Liski Jasper","9A Mehtälä Markus","9A Mäkelä Isla","9A Nevanperä Lotta","9A Nissilä Milja","9A Pataki Alma","9A Rautakoski Atte","9A Saukko Jonna","9A Tavasti Aada","9A von Koch Emma","9B Eteläniemi Maria","9B Haapakoski Teemu","9B Halmeenpää Niilo","9B Isopahkala Eelis","9B Isopahkala Josua","9B Kalliokoski Aleksi","9B Lassila Minea","9B Liimatainen Joona","9B Löytynoja Emmi","9B Ojala Iisa","9B Pekkanen Viljami","9B Petäistö Petrus","9B Roukala Jimi","9B Simi Samuel","9B Sorvari Milla","9B Tolonen Enni","9B Vihelä Suvi","9B Yliverronen Annika","9C Ainasoja Helmi-Matilda","9C Anttiroiko Mikael","9C Anttiroiko Teo","9C Bäckman Jeremias","9C Helanen Joel","9C Mankinen Fanni","9C Myllykangas Silver","9C Myllymäki Aino","9C Parhiala Carola","9C Siermala Ani","9C Sinkkonen Martin","9C Somero Lilja","9C Stenbäck Riina","9C Suomala Joona","9C Vähäkuopus Julius","9D Hautala Essi","9D Hietala Leevi","9D Jaatinen Joonatan","9D Junnikkala Aada","9D Kallio Arttu","9D Karppinen Sylvi","9D Kauppi Jenni","9D Kärjä Tuomas","9D Kärkkäinen Milla","9D Lamsijärvi Aada","9D Lindholm Frida","9D Ojala Severi","9D Salmu Elina","9D Sorvari Alvar","9D Sorvari Veeti","9D Vierimaa Alex","9E Apuli Pinja","9E Heinonen Saku","9E Isopahkala Frans","9E Isopahkala Petrus","9E Jyrinki Vilma","9E Kallio Sonja","9E Kangas Linnea","9E Karhulahti Milja","9E Kauppila Benjam","9E Mustonen Minta","9E Mård Sara-Emilia","9E Niemi Eelis","9E Ojala Nooa","9E Raitapuro Venla","9E Saari Alisa","9E Salmela Miro","9E Savolainen Eetu","9E Siipo Eino","9E Talus Kasper","9F Ferreira Eva","9F Haikola Tea","9F Humalajoki Julia","9F Isopahkala Veera","9F Junnikkala Milja","9F Jylkkä Salli","9F Kalliokoski Mari","9F Kinaret Minea","9F Manninen Jan","9F Märsylä Martti","9F Nikupaavo Juuso","9F Rahkola Meri-Tuuli","9F Sorvala Oliver","9F Tavasti Lumia","9F Vasankari Otto","9G Chen Nono","9G Ippolitov Mikhail","9G Isopahkala Lilian","9G Keskitalo Jarno","9G Lassila Nelli","9G Lehtinen Luukas","9G Mäkelä Jasmin","9G Mäkelä Josefina","9G Paavola Roni","9G Peltola Enni","9G Perttula Lalli","9G Rautakoski Jose","9G Salmu Nella","9G Saukko Antto","9G Väre Frida","8J Hihnala Niko","8J Luhtio Aino","8J Ylitalo Janette", "6B Törnvall Ella", "6B Lehtola Oskari", "6B Pernu Oliver"
+];
+const noteTypes=[{label:"Positiivinen suoritus",class:"bg-positiivinen"},{label:"Myöhästynyt",class:"bg-myohastynyt"},{label:"Selvittämätön poissaolo",class:"bg-selvittamaton"},{label:"Kotitehtävät tekemättä",class:"bg-kotitehtavat"},{label:"Sairas",class:"bg-sairas"},{label:"Lupa",class:"bg-lupa"},{label:"Luvaton poissaolo, selvitetty",class:"bg-luvaton_selvitetty"},{label:"Asiaton käytös",class:"bg-asiaton_kaytos"},{label:"Muu koulutyö, läsnä",class:"bg-muu_koulutyo"},{label:"Aktiivinen tuntityöskentely",class:"bg-aktiivinen"},{label:"Hyvä päivä",class:"bg-hyva_paiva"},{label:"Työskentelit hienosti",class:"bg-hienosti_toisten"},{label:"Välineitä puuttuu",class:"bg-valineita_puuttuu"},{label:"Luokasta poistaminen",class:"bg-luokasta_poistaminen"},{label:"Ohjaava keskustelu",class:"bg-ohjaava_keskustelu"},{label:"Oppitunnin häirintä",class:"bg-oppitunnin_hairinta"},{label:"Järjestyssäännön rikkomus",class:"bg-jarjestyssaannon_rikkomus"}, {label:"Muu merkintä",class:"bg-muu_merinta"}];
+
+let notes=[];
+
+// --- LOGIN ---
+function login(){
+  const user=document.getElementById('username').value || "MERE";
+  const displayName=user.split('@')[0].split('.').map(s=>s.charAt(0).toUpperCase()+s.slice(1)).join(' ');
+  document.getElementById('user-display').innerText=displayName;
+  document.getElementById('user-email').innerText=user;
+  let role = "Opettaja";
+let lyhenne;
+
+// Jos tämä käyttäjä on sijainen
+if(user.toLowerCase() === "tuula.nikki@edu.kalajoki.fi") {
+    role = "Sijainen";
+    lyhenne = "NIKTU"; // haluttu lyhenne sijaiselle
+} else {
+    // Muut opettajat: sama logiikka kuin ennen
+    const parts = user.split('@')[0].split('.');
+    const etunimi = parts[0];
+    const sukunimi = parts[1];
+    lyhenne = sukunimi.substring(0,3).toUpperCase() + etunimi.substring(0,2).toUpperCase();
+}
+
+document.getElementById('user-role').innerText = role;
+document.getElementById('note-author').value = lyhenne;
+
+
+  document.getElementById('login-overlay').style.display='none';
+  document.getElementById('topbar').style.display='flex';
+  document.getElementById('wrapper').style.display='flex';
+  initApp();
+}
+
+// --- INIT ---
+function initApp(){
+  const sSel=document.getElementById('note-student');
+  const seatSel=document.getElementById('seating-student');
+  sSel.innerHTML=students.map(s=>`<option value="${s}">${s}</option>`).join('');
+  seatSel.innerHTML=students.map(s=>`<option value="${s}">${s}</option>`).join('');
+  const tSel=document.getElementById('note-type');
+  tSel.innerHTML=noteTypes.map(t=>`<option value="${t.label}">${t.label}</option>`).join('');
+  loadDesks();
+}
+
+// --- NAVIGATION ---
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+// --- NOTES ---
+function saveNote(){
+  const editIdx=document.getElementById('edit-idx').value;
+
+  const selectedStudents = [...document.getElementById('note-student').selectedOptions].map(o => o.value);
+
+  const baseNote = {
+    time: document.getElementById('note-time').value,
+    type: document.getElementById('note-type').value,
+    duration: document.getElementById('note-duration').value,
+    info: document.getElementById('note-info').value,
+    author: document.getElementById('note-author').value
+  };
+
+  if(editIdx !== ""){
+    notes[editIdx] = {
+      ...baseNote,
+      student: selectedStudents[0] || ""
+    };
+    document.getElementById('edit-idx').value = "";
+  } else {
+    selectedStudents.forEach(student => {
+      notes.push({
+        ...baseNote,
+        student: student
+      });
+    });
+  }
+
+  renderNotes();
+  resetForm();
+}
+function renderNotes(){
+  const list=document.getElementById('notes-list');
+  list.innerHTML=notes.map((n,i)=>{const t=noteTypes.find(t=>t.label===n.type);return`<tr>
+<td>${n.time} (${n.duration} min)</td><td>${n.student}</td><td class="${t.class}">${n.type}</td><td>${n.info}</td><td>${n.author}</td>
+<td><button class="btn btn-edit" onclick="editNote(${i})">Muokkaa</button><button class="btn btn-del" onclick="deleteNote(${i})">Poista</button></td>
+</tr>`}).join('');
+}
+function editNote(i){const n=notes[i];document.getElementById('note-time').value=n.time;document.getElementById('note-student').value=n.student;document.getElementById('note-type').value=n.type;document.getElementById('note-duration').value=n.duration;document.getElementById('note-info').value=n.info;document.getElementById('note-author').value=n.author;document.getElementById('edit-idx').value=i;document.getElementById('note-title').innerText="Muokkaa merkintää";document.getElementById('save-btn').innerText="Tallenna muutokset";}
+function deleteNote(i){notes.splice(i,1);renderNotes();}
+function resetForm(){document.getElementById('note-info').value="";document.getElementById('note-title').innerText="Lisää tuntimerkintä";document.getElementById('save-btn').innerText="Tallenna merkintä";}
+
+// --- SEATING ---
+function addDesk(){
+  const student=document.getElementById('seating-student').value;
+  const deskData={student:student,left:50,top:50};
+  createDeskElement(deskData);
+  saveDesks();
+}
+function createDeskElement(d){const area=document.getElementById('seating-area');const desk=document.createElement('div');desk.className='desk';desk.style.left=d.left+'px';desk.style.top=d.top+'px';desk.innerText=d.student;desk.onmousedown=dragMouseDown;area.appendChild(desk);}
+function dragMouseDown(e){let el=e.target;let pos1=0,pos2=0,pos3=e.clientX,pos4=e.clientY;document.onmouseup=()=>{document.onmouseup=null;document.onmousemove=null;saveDesks();};document.onmousemove=(e)=>{pos1=pos3-e.clientX;pos2=pos4-e.clientY;pos3=e.clientX;pos4=e.clientY;el.style.top=(el.offsetTop-pos2)+'px';el.style.left=(el.offsetLeft-pos1)+'px';};}
+function saveDesks(){
+  const desks=[];
+  document.querySelectorAll('#seating-area .desk').forEach(d=>{
+    desks.push({student:d.innerText,left:parseInt(d.style.left),top:parseInt(d.style.top)});
+  });
+
+  const className=document.getElementById('seating-class').value;
+  const groupName=document.getElementById('seating-group').value;
+  const key=`seatingDesks_${className}_${groupName}`;
+  localStorage.setItem(key,JSON.stringify(desks));
+}
+
+function loadDesks(){
+  document.getElementById('seating-area').innerHTML="";
+  const className=document.getElementById('seating-class').value;
+  const groupName=document.getElementById('seating-group').value;
+  const key=`seatingDesks_${className}_${groupName}`;
+  const saved=localStorage.getItem(key);
+  if(saved) JSON.parse(saved).forEach(d=>createDeskElement(d));
+}
+
+
+// --- USER POPUP ---
+function toggleUserPopup(){const popup=document.getElementById('user-popup');popup.style.display=(popup.style.display==='block')?'none':'block';}
+
+// --- LOGOUT ---
+function logout(){location.reload();}
+// --- MONIVALINTA ILMAN CTRL-NÄPPÄINTÄ ---
+document.addEventListener('DOMContentLoaded', function() {
+  const select = document.getElementById('note-student');
+
+  select.addEventListener('mousedown', function(e) {
+    if (e.target.tagName === 'OPTION') {
+      e.preventDefault();
+      e.target.selected = !e.target.selected;
+    }
+  });
+});
+    
+</script>
+</body>
+</html>
